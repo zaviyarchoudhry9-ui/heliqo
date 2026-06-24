@@ -182,3 +182,20 @@
     border-right-color: var(--border);
   }
 }
+/* Mobile Responsive Overrides */
+@media (max-width: 768px) {
+  /* Dashboard grids ko stack kar dega */
+  .grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Padding kam kar dega taake screen par fit aaye */
+  .p-8 {
+    padding: 1rem !important;
+  }
+
+  /* Text size ko chhota karega */
+  .text-4xl {
+    font-size: 1.5rem !important;
+  }
+}
