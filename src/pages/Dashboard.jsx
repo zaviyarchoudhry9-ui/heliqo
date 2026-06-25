@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import jsPDF from "jspdf";
-
+import { GoogleGenerativeAI } from "@google/generative-ai";
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("dashboard"); // Tab switching status controller
   const [projectName, setProjectName] = useState("");
@@ -41,86 +41,59 @@ export default function Dashboard() {
     localStorage.setItem("heliqoProjects", JSON.stringify(updatedProjects));
   };
 
-  const generateDNA = () => {
-    if (!projectName.trim() || !brief.trim()) {
-      alert("Please enter project name and client brief.");
-      return;
-    }
+  const generateDNA = async () => {
+  if (!projectName.trim() || !brief.trim()) {
+    alert("Please enter project name and client brief.");
+    return;
+  }
 
-    setLoading(true);
+  setLoading(true);
 
-    setTimeout(() => {
-      const text = brief.toLowerCase();
+  try {
+    const genAI = new GoogleGenerativeAI(
+      import.meta.env.VITE_GEMINI_API_KEY
+    );
 
-      let analysis = {
-        personality: "Modern, Professional, Innovative",
-        audience: "Business Professionals",
-        colors: "Purple, Black, White",
-        typography: "Poppins + Inter",
-        moodboard: "Modern, Clean, Strategic",
-        voice: "Confident, Smart, Professional",
-      };
+   const model = genAI.getGenerativeModel({
+  model: "gemini-2.0-flash",
+});
 
-      if (
-        text.includes("beauty") ||
-        text.includes("skincare") ||
-        text.includes("cosmetic")
-      ) {
-        analysis = {
-          personality: "Elegant, Premium, Feminine",
-          audience: "Women aged 25-45",
-          colors: "Rose Gold, Ivory, Beige",
-          typography: "Playfair Display + Inter",
-          moodboard: "Luxury, Soft, Minimal",
-          voice: "Warm, Elegant, Trustworthy",
-        };
-      } else if (
-        text.includes("restaurant") ||
-        text.includes("food") ||
-        text.includes("cafe")
-      ) {
-        analysis = {
-          personality: "Friendly, Authentic, Energetic",
-          audience: "Food Lovers & Families",
-          colors: "Red, Orange, Cream",
-          typography: "Montserrat + Open Sans",
-          moodboard: "Appetizing, Rustic, Vibrant",
-          voice: "Welcoming, Fun, Delicious",
-        };
-      } else if (
-        text.includes("crypto") ||
-        text.includes("forex") ||
-        text.includes("fintech") ||
-        text.includes("trading")
-      ) {
-        analysis = {
-          personality: "Bold, Secure, Innovative",
-          audience: "Investors & Traders",
-          colors: "Purple, Black, Electric Blue",
-          typography: "Space Grotesk + Inter",
-          moodboard: "Futuristic, Tech, Premium",
-          voice: "Confident, Intelligent, Powerful",
-        };
-      } else if (
-        text.includes("real estate") ||
-        text.includes("property") ||
-        text.includes("housing")
-      ) {
-        analysis = {
-          personality: "Trustworthy, Premium, Professional",
-          audience: "Property Buyers & Investors",
-          colors: "Navy, Gold, White",
-          typography: "Merriweather + Inter",
-          moodboard: "Luxury, Corporate, Elegant",
-          voice: "Reliable, Professional, Confident",
-        };
-      }
+    const prompt = `
+Analyze this client brief and return ONLY JSON.
 
-      setResults(analysis);
-      saveProject(analysis);
-      setLoading(false);
-    }, 2000);
-  };
+Brief:
+${brief}
+
+{
+  "personality": "",
+  "audience": "",
+  "colors": "",
+  "typography": "",
+  "moodboard": "",
+  "voice": ""
+}
+`;
+
+    const result = await model.generateContent(prompt);
+    const response = result.response.text();
+
+    const cleanResponse = response
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
+
+    const analysis = JSON.parse(cleanResponse);
+
+    setResults(analysis);
+    saveProject(analysis);
+
+  } catch (error) {
+    console.error(error);
+    alert("Gemini AI Error");
+  }
+
+  setLoading(false);
+};
 
   const exportPDF = () => {
     if (!results) {
